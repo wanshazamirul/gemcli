@@ -1,0 +1,111 @@
+/**
+ * Next.js API Route for Chat Endpoint
+ *
+ * Handles POST requests to /api/chat
+ * Validates input and calls Gemini API for AI responses
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { chatWithGemini } from '@/lib/gemini-api';
+
+interface ChatRequestBody {
+  prompt: string;
+  conversationHistory?: Array<{ role: 'user' | 'model'; content: string }>;
+}
+
+interface ChatResponseBody {
+  response: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  error?: string;
+}
+
+/**
+ * POST /api/chat
+ *
+ * Request body:
+ * {
+ *   "prompt": "string",
+ *   "conversationHistory": [{ "role": "user" | "model", "content": "string" }]
+ * }
+ *
+ * Response:
+ * {
+ *   "response": "string",
+ *   "usage": { "promptTokens": number, "completionTokens": number, "totalTokens": number }
+ * }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse<ChatResponseBody>> {
+  try {
+    // Parse request body
+    const body: ChatRequestBody = await request.json();
+
+    // Validate prompt
+    if (!body.prompt || typeof body.prompt !== 'string') {
+      return NextResponse.json(
+        { response: '', error: 'Prompt is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
+    // Validate prompt length
+    if (body.prompt.trim().length === 0) {
+      return NextResponse.json(
+        { response: '', error: 'Prompt cannot be empty' },
+        { status: 400 }
+      );
+    }
+
+    // Validate conversation history if provided
+    if (body.conversationHistory && !Array.isArray(body.conversationHistory)) {
+      return NextResponse.json(
+        { response: '', error: 'Conversation history must be an array' },
+        { status: 400 }
+      );
+    }
+
+    // Prepare conversation history
+    const conversationHistory = body.conversationHistory || [];
+    const fullConversation = [
+      ...conversationHistory,
+      { role: 'user' as const, content: body.prompt },
+    ];
+
+    // Call Gemini API
+    const { text, usage } = await chatWithGemini(fullConversation);
+
+    // Return successful response
+    return NextResponse.json({
+      response: text,
+      usage,
+    });
+  } catch (error) {
+    // Handle errors
+    console.error('Error in /api/chat:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+    return NextResponse.json(
+      {
+        response: '',
+        error: errorMessage,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/chat
+ *
+ * Returns method not allowed for GET requests
+ */
+export async function GET(): Promise<NextResponse<{ error: string }>> {
+  return NextResponse.json(
+    { error: 'Method not allowed. Use POST instead.' },
+    { status: 405 }
+  );
+}
