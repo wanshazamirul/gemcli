@@ -74,25 +74,31 @@ function convertToGeminiFormat(messages: Array<{ role: 'user' | 'model'; content
 /**
  * Send chat request to Gemini API
  *
- * @param conversationHistory - Array of messages with role and content
- * @param options - Generation config options
+ * @param prompt - The user's prompt message
+ * @param conversationHistory - Array of previous messages with role and content
  * @returns Promise with AI response text and usage metadata
  * @throws {Error} If API request fails or returns no candidates
  */
 export async function chatWithGemini(
-  conversationHistory: Array<{ role: 'user' | 'model'; content: string }>,
-  options: ChatWithGeminiOptions = {}
+  prompt: string,
+  conversationHistory: Array<{ role: 'user' | 'model'; content: string }> = []
 ): Promise<{ text: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   const apiKey = getApiKey();
 
+  // Build full conversation with new prompt
+  const fullConversation = [
+    ...conversationHistory,
+    { role: 'user' as const, content: prompt },
+  ];
+
   // Prepare request body
   const requestBody: GeminiRequestBody = {
-    contents: convertToGeminiFormat(conversationHistory),
+    contents: convertToGeminiFormat(fullConversation),
     generationConfig: {
-      temperature: options.temperature ?? 0.7,
-      topK: options.topK ?? 40,
-      topP: options.topP ?? 0.95,
-      maxOutputTokens: options.maxOutputTokens ?? 8192,
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 8192,
     },
   };
 
@@ -145,27 +151,33 @@ export async function chatWithGemini(
 /**
  * Stream chat response from Gemini API
  *
- * @param conversationHistory - Array of messages with role and content
+ * @param prompt - The user's prompt message
  * @param onChunk - Callback function for each chunk of streaming response
- * @param options - Generation config options
+ * @param conversationHistory - Array of previous messages with role and content
  * @returns Promise with final usage metadata
  * @throws {Error} If API request fails
  */
 export async function streamChatWithGemini(
-  conversationHistory: Array<{ role: 'user' | 'model'; content: string }>,
+  prompt: string,
   onChunk: (chunk: string) => void,
-  options: ChatWithGeminiOptions = {}
+  conversationHistory: Array<{ role: 'user' | 'model'; content: string }> = []
 ): Promise<{ usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   const apiKey = getApiKey();
 
+  // Build full conversation with new prompt
+  const fullConversation = [
+    ...conversationHistory,
+    { role: 'user' as const, content: prompt },
+  ];
+
   // Prepare request body
   const requestBody: GeminiRequestBody = {
-    contents: convertToGeminiFormat(conversationHistory),
+    contents: convertToGeminiFormat(fullConversation),
     generationConfig: {
-      temperature: options.temperature ?? 0.7,
-      topK: options.topK ?? 40,
-      topP: options.topP ?? 0.95,
-      maxOutputTokens: options.maxOutputTokens ?? 8192,
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 8192,
     },
   };
 

@@ -14,7 +14,7 @@ interface ChatRequestBody {
 }
 
 interface ChatResponseBody {
-  response: string;
+  text: string;
   usage?: {
     promptTokens: number;
     completionTokens: number;
@@ -34,7 +34,7 @@ interface ChatResponseBody {
  *
  * Response:
  * {
- *   "response": "string",
+ *   "text": "string",
  *   "usage": { "promptTokens": number, "completionTokens": number, "totalTokens": number }
  * }
  */
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
     // Validate prompt
     if (!body.prompt || typeof body.prompt !== 'string') {
       return NextResponse.json(
-        { response: '', error: 'Prompt is required and must be a string' },
+        { text: '', error: 'Prompt is required and must be a string' },
         { status: 400 }
       );
     }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
     // Validate prompt length
     if (body.prompt.trim().length === 0) {
       return NextResponse.json(
-        { response: '', error: 'Prompt cannot be empty' },
+        { text: '', error: 'Prompt cannot be empty' },
         { status: 400 }
       );
     }
@@ -62,24 +62,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
     // Validate conversation history if provided
     if (body.conversationHistory && !Array.isArray(body.conversationHistory)) {
       return NextResponse.json(
-        { response: '', error: 'Conversation history must be an array' },
+        { text: '', error: 'Conversation history must be an array' },
         { status: 400 }
       );
     }
 
-    // Prepare conversation history
-    const conversationHistory = body.conversationHistory || [];
-    const fullConversation = [
-      ...conversationHistory,
-      { role: 'user' as const, content: body.prompt },
-    ];
-
-    // Call Gemini API
-    const { text, usage } = await chatWithGemini(fullConversation);
+    // Call Gemini API with prompt and conversation history
+    const { text, usage } = await chatWithGemini(body.prompt, body.conversationHistory || []);
 
     // Return successful response
     return NextResponse.json({
-      response: text,
+      text,
       usage,
     });
   } catch (error) {
@@ -90,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ChatRespo
 
     return NextResponse.json(
       {
-        response: '',
+        text: '',
         error: errorMessage,
       },
       { status: 500 }
