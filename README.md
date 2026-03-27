@@ -63,7 +63,7 @@ Before running this project, ensure you have:
 
    Edit `.env.local` and add your Gemini API key:
    ```env
-   GEMINI_API_KEY=your_actual_api_key_here
+   NEXT_PUBLIC_GEMINI_API_KEY=your_actual_api_key_here
    NEXT_PUBLIC_APP_NAME="Retro Terminal Chat"
    ```
 
@@ -99,7 +99,7 @@ npm run lint
 
 1. Push your code to GitHub
 2. Import project to [Vercel](https://vercel.com/new)
-3. Add `GEMINI_API_KEY` as environment variable in Vercel dashboard
+3. Add `NEXT_PUBLIC_GEMINI_API_KEY` as environment variable in Vercel dashboard
 4. Deploy!
 
 ### Other Platforms
@@ -116,7 +116,7 @@ npm run lint
 
 3. Configure your platform to:
    - Serve static files from `.next` directory
-   - Set `GEMINI_API_KEY` environment variable
+   - Set `NEXT_PUBLIC_GEMINI_API_KEY` environment variable
    - Run on Node.js 22+
 
 ## Tech Stack
