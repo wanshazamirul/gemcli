@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Terminal } from '@/components/terminal/Terminal';
 import { MessageList } from '@/components/terminal/MessageList';
 import { CommandInput } from '@/components/terminal/CommandInput';
