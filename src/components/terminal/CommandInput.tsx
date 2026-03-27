@@ -25,7 +25,10 @@ export const CommandInput: React.FC<CommandInputProps> = ({
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [cursorOffset, setCursorOffset] = useState(0);
 
   // Available commands for autocomplete
   const commands = ['/help', '/new', '/clear', '/export', '/import', '/theme'];
@@ -34,6 +37,22 @@ export const CommandInput: React.FC<CommandInputProps> = ({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Track cursor position
+  useEffect(() => {
+    if (inputRef.current) {
+      setCursorPosition(inputRef.current.selectionStart || 0);
+    }
+  }, [input]);
+
+  // Calculate cursor offset based on text width
+  useEffect(() => {
+    if (measureRef.current) {
+      const textBeforeCursor = input.slice(0, cursorPosition);
+      measureRef.current.textContent = textBeforeCursor;
+      setCursorOffset(measureRef.current.offsetWidth);
+    }
+  }, [input, cursorPosition]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,11 +113,18 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 
       {/* Input field with blinking cursor */}
       <div className="flex-1 relative font-mono text-green-400">
+        {/* Hidden input that captures all events */}
         <input
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            setCursorPosition(e.target.selectionStart || 0);
+          }}
+          onSelect={(e) => {
+            setCursorPosition(e.target.selectionStart || 0);
+          }}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           className={`
@@ -106,19 +132,35 @@ export const CommandInput: React.FC<CommandInputProps> = ({
             text-green-400 text-lg
             disabled:opacity-50 disabled:cursor-not-allowed
             caret-transparent
+            absolute
+            opacity-0
+            z-10
           `}
           autoComplete="off"
           spellCheck={false}
         />
 
+        {/* Visible text display */}
+        <span className="text-green-400 text-lg whitespace-pre">
+          {input}
+        </span>
+
+        {/* Hidden span for measuring cursor position */}
+        <span
+          ref={measureRef}
+          className="absolute invisible whitespace-pre text-lg"
+          style={{ fontFamily: 'inherit', fontSize: 'inherit' }}
+        >
+          {input.slice(0, cursorPosition)}
+        </span>
+
         {/* Custom blinking cursor */}
         <motion.span
-          className="absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none"
+          className="absolute top-0 pointer-events-none text-green-400 text-lg"
           animate={{ opacity: [1, 0, 1] }}
           transition={{ duration: 1, repeat: Infinity }}
           style={{
-            left: `${input.length}ch`,
-            marginLeft: '2px'
+            left: `${cursorOffset}px`
           }}
         >
           █
