@@ -10,18 +10,24 @@ const KEYWORDS = [
   'async', 'await', 'try', 'catch', 'throw', 'new', 'this', 'true', 'false'
 ];
 
+// Pre-compiled regex patterns for better performance
+// Keywords: match whole words only to avoid partial matches
+const KEYWORD_PATTERNS = KEYWORDS.map(
+  keyword => ({ keyword, regex: new RegExp(`\\b${keyword}\\b`, 'g') })
+);
+
 /**
  * Highlights code with terminal-style formatting
  * @param code - The code to highlight
- * @param language - Programming language (for future extensibility)
+ * @param language - Programming language (reserved for future language-specific syntax)
  * @returns Formatted code with markdown syntax
  */
 export function highlightCode(code: string, language: string = ''): string {
+  // language parameter reserved for future language-specific highlighting rules
   let highlighted = code;
 
-  // Highlight keywords in bold
-  KEYWORDS.forEach(keyword => {
-    const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+  // Highlight keywords in bold using pre-compiled patterns
+  KEYWORD_PATTERNS.forEach(({ keyword, regex }) => {
     highlighted = highlighted.replace(regex, `**${keyword}**`);
   });
 
@@ -31,15 +37,16 @@ export function highlightCode(code: string, language: string = ''): string {
     (match) => `__${match}__`
   );
 
-  // Highlight comments (// and /* */)
+  // Highlight line comments (//) with italic emphasis
   highlighted = highlighted.replace(
     /(\/\/.*$)/gm,
-    (match) => `//${match.substring(2)}`
+    (match) => `__${match}__`
   );
 
+  // Highlight block comments (/* */) with italic emphasis
   highlighted = highlighted.replace(
     /(\/\*[\s\S]*?\*\/)/g,
-    (match) => `//${match.substring(2, match.length - 2)}`
+    (match) => `__${match}__`
   );
 
   return highlighted;
